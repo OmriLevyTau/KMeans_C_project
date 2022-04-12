@@ -108,7 +108,7 @@ double** createMatrix(int rows, int cols, char* filePath){
 
 int main() {
 
-    char* PATH =  "C:\\Users\\Omri\\Desktop\\CS_Omri\\Second_Year\\SW_Project\\EX_1\\K_Means_C\\KMeans_C_project\\input_1.txt";
+    char* PATH =  "C:\\Users\\Omri\\Desktop\\CS_Omri\\Second_Year\\SW_Project\\EX_1\\K_Means_C\\KMeans_C_project\\input_3.txt";
     int rows = countLines(PATH);
     int cols = countCols(PATH);
     double ** matrix = createMatrix(rows,cols,PATH);
