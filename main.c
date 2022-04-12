@@ -2,6 +2,7 @@
 #include <string.h>
 # include <stdlib.h>
 # include <math.h>
+#include <unistd.h>
 # define epsilon 0.001
 
 int countLines(char* filePath){
@@ -281,7 +282,7 @@ void kmean_test(){
 
 
 int main(int argc, char * argv[]) {
-//    kmean_test();
+    kmean_test();
 
     char* K_str = argv[1];
     char* max_iter_str = argv[2];
@@ -292,19 +293,19 @@ int main(int argc, char * argv[]) {
         printf("Invalid Input!");
         return 1;
     }
-    //valid data
+    //data is valid
     int K = atoi(K_str);
     int max_iter = atoi(max_iter_str);
 
+    char cwd[PATH_MAX];
+    if (getcwd(cwd, sizeof(cwd)) != NULL) {
+        printf("Current working dir: %s\n", cwd);
+    } else {
+        perror("getcwd() error");
+    }
 
-//    printf("%d", argc);
-//    printf("\n");
-//    printf("\n");
-//    printf(max_iter);
-//    printf("\n");
-//    printf(input_name);
-//    printf("\n");
-//    printf(output_name);
+
+
 
 
 
