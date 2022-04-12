@@ -14,7 +14,7 @@ int countLines(char* filePath){
     int counter=0;
 
     if (fp==NULL){
-        printf("Empty File");
+        printf("Invalid Input");
         return 0;
     }
     for (c= getc(fp); c!=EOF; c= getc(fp)){
@@ -39,7 +39,7 @@ int countCols(char* filePath){
     int counter=0;
 
     if (fp==NULL){
-        printf("Empty File");
+        printf("Invalid Input");
         return 0;
     }
 
@@ -69,6 +69,9 @@ void printMatrix(double** mat, int rows, int cols){
 
 
 double** buildMatrix(int rows, int cols){
+    /*
+     * Creates empty matrix of size rows x cols
+     */
     double **a = calloc(rows, sizeof(int*));
     for (int i=0;i<rows;i++){
         a[i] = calloc(cols, sizeof(double));
@@ -77,6 +80,9 @@ double** buildMatrix(int rows, int cols){
 }
 
 double** createMatrix(int rows, int cols, char* filePath){
+    /*
+     * Creates empty matrix and fills it with read values from file
+     */
     double** matrix = buildMatrix(rows,cols);
     int lineSize = cols*16;
     FILE *fp =  fopen(filePath,"r");
@@ -85,17 +91,19 @@ double** createMatrix(int rows, int cols, char* filePath){
     double tmp;
 
     if (fp==NULL){
-        printf("Empty File");
+        printf("Invalid Input");
     }
 
     char line[lineSize];
+    // Reads each line as a string
     while (fgets(line,lineSize,fp)!=NULL){
-        token = strtok(line,",");
-        while (token!=NULL){
-            matrix[i][j] = atof(token);
-            token = strtok(NULL,",");
+        token = strtok(line,","); // token is a string between 2 commas
+        while (token!=NULL){               // in end of line token is NULL
+            matrix[i][j] = atof(token); // converts the string token to double
+            token = strtok(NULL,","); // move forward to the next comma. Pointer=NULL so it will continue from the last place
             j++;
         }
+        // finished line
         i++;
         j=0;
     }
@@ -108,12 +116,12 @@ double** createMatrix(int rows, int cols, char* filePath){
 
 int main() {
 
-    char* PATH =  "C:\\Users\\Omri\\Desktop\\CS_Omri\\Second_Year\\SW_Project\\EX_1\\K_Means_C\\KMeans_C_project\\input_3.txt";
+    char* PATH =  "C:\\Users\\Omri\\Desktop\\CS_Omri\\Second_Year\\SW_Project\\EX_1\\K_Means_C\\KMeans_C_project\\input_1.txt";
     int rows = countLines(PATH);
     int cols = countCols(PATH);
     double ** matrix = createMatrix(rows,cols,PATH);
     printMatrix(matrix,rows,cols);
-
+    free(matrix);
 
 }
 
