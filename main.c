@@ -61,7 +61,7 @@ int countCols(char* filePath){
 void printMatrix(double** mat, int rows, int cols){
     for (int i=0; i<rows;i++){
         for (int j=0;j<cols;j++){
-            printf(" %.4f",mat[i][j]);
+            printf("  %.4f",mat[i][j]);
         }
         printf("\n");
     }
@@ -113,6 +113,60 @@ double** createMatrix(int rows, int cols, char* filePath){
 
 }
 
+double* sub_vectors(const double *A, const double *B, int n){
+    double* res = (double*)malloc(n*sizeof(double));
+    for(int i=0; i<n; i++){
+        res[i] = A[i] - B[i];
+    }
+    return res;
+}
+
+double squared_dot_product(const double *A, const double *B, int n){
+    double res = 0;
+    for(int i=0; i<n; i++){
+        res = res + (A[i] * B[i]);
+    }
+    return res;
+}
+
+double** copy(double** data, int K, int cols){
+    double** new_mat = buildMatrix(K, cols);
+    for(int i=0; i<K; i++){
+        for(int j=0; j<cols; j++){
+            new_mat[i][j] = data[i][j];
+        }
+    }
+    return new_mat;
+}
+
+double** K_means(int K, char* input_filename, int max_iter){
+    int rows = countLines(input_filename);
+    int cols = countCols(input_filename);
+    double ** data = createMatrix(rows,cols,input_filename);
+    double** centroids = copy(data, K, cols);
+
+    //place to treat input validity
+
+    int points_clusters[rows];
+
+    for(int iter=0; iter<max_iter; iter++){
+        for (int point=0; point<rows; point++){ //iterate through points and assign to closest cluster
+            double min_dist = INT_MAX;
+            int arg_min = -1;
+            for(int cluster_ind=0; cluster_ind<K; cluster_ind++){
+                double* cluster = centroids[cluster_ind];
+                double* tmp_arr = sub_vectors(cluster,data[point], cols);
+                double dist_point_cluster = squared_dot_product(tmp_arr,tmp_arr,cols);
+                if(dist_point_cluster<min_dist){
+                    min_dist = dist_point_cluster;
+                    arg_min = cluster_ind;
+                }
+            }
+            points_clusters[point] = arg_min;
+        }
+    }
+}
+
 
 int main() {
 
@@ -120,7 +174,11 @@ int main() {
     int rows = countLines(PATH);
     int cols = countCols(PATH);
     double ** matrix = createMatrix(rows,cols,PATH);
-    printMatrix(matrix,rows,cols);
+//    printMatrix(matrix,rows,cols);
+
+    double** new_mat = copy(matrix, 3, 3);
+    printMatrix(new_mat, 3,3);
+
     free(matrix);
 
 }
