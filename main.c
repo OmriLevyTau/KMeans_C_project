@@ -121,6 +121,13 @@ double* sub_vectors(const double *A, const double *B, int n){
     return res;
 }
 
+double* add_vectors(const double *A, const double *B, int n){
+    double* res = (double*)malloc(n*sizeof(double));
+    for(int i=0; i<n; i++){
+        res[i] = A[i] + B[i];
+    }
+    return res;
+}
 double squared_dot_product(const double *A, const double *B, int n){
     double res = 0;
     for(int i=0; i<n; i++){
@@ -144,15 +151,17 @@ double** K_means(int K, char* input_filename, int max_iter){
     int cols = countCols(input_filename);
     double ** data = createMatrix(rows,cols,input_filename);
     double** centroids = copy(data, K, cols);
-
+    int idx, arg_min;
+    double min_dist;
     //place to treat input validity
 
     int points_clusters[rows];
 
     for(int iter=0; iter<max_iter; iter++){
-        for (int point=0; point<rows; point++){ //iterate through points and assign to closest cluster
-            double min_dist = INT_MAX;
-            int arg_min = -1;
+        //iterate through points and assign to the closest cluster
+        for (int point=0; point<rows; point++){
+            min_dist = INT_MAX;
+            arg_min = -1;
             for(int cluster_ind=0; cluster_ind<K; cluster_ind++){
                 double* cluster = centroids[cluster_ind];
                 double* tmp_arr = sub_vectors(cluster,data[point], cols);
@@ -164,22 +173,44 @@ double** K_means(int K, char* input_filename, int max_iter){
             }
             points_clusters[point] = arg_min;
         }
+        //calculate new centroids
+        double** old_centroids = copy(centroids,K, cols);
+        double** cluster_sum = buildMatrix(K, cols); //zero matrix
+        int cluster_counter[K];
+        memset(cluster_counter, 0, sizeof(cluster_counter)); //zero array
+
+        for(int r=0; r<rows; r++){
+             idx = points_clusters[r];
+             cluster_counter[idx] += 1;
+             cluster_sum[idx] = add_vectors(cluster_sum[idx], data[r], cols);
+        }
+
+        //update centroids
+        for(int k=0; k<K; k++){
+            for(int c=0; c<cols; c++){
+                centroids[k][c] = cluster_sum[k][c] / cluster_counter[k];
+            }
+        }
     }
+    free(data);
+    return centroids;
 }
 
 
 int main() {
 
-    char* PATH =  "C:\\Users\\Omri\\Desktop\\CS_Omri\\Second_Year\\SW_Project\\EX_1\\K_Means_C\\KMeans_C_project\\input_1.txt";
+    char* PATH =  "C:\\Users\\Omri\\Desktop\\CS_Omri\\Second_Year\\SW_Project\\EX_1\\K_Means_C\\KMeans_C_project\\input_3.txt";
     int rows = countLines(PATH);
     int cols = countCols(PATH);
-    double ** matrix = createMatrix(rows,cols,PATH);
+//    double ** matrix = createMatrix(rows,cols,PATH);
 //    printMatrix(matrix,rows,cols);
-
-    double** new_mat = copy(matrix, 3, 3);
-    printMatrix(new_mat, 3,3);
-
-    free(matrix);
+//
+//    double** new_mat = copy(matrix, 3, 3);
+//    printMatrix(new_mat, 3,3);
+//
+//    free(matrix);
+    double** mat = K_means(15, PATH, 200);
+    printMatrix(mat, rows,cols);
 
 }
 
