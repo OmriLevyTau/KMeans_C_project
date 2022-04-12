@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <string.h>
 # include <stdlib.h>
-
+# include <math.h>
+# define epsilon 0.001
 
 int countLines(char* filePath){
     /*
@@ -156,10 +157,11 @@ double** K_means(int K, char* input_filename, int max_iter){
     int cols = countCols(input_filename);
     double ** data = createMatrix(rows,cols,input_filename);
     double** centroids = copy(data, K, cols); //K first data points
-    int idx, arg_min;
+    int idx, arg_min, counter;
     double min_dist;
     double** cluster_sum;
     double** old_centroids;
+
     //place to treat input validity
 
     int points_clusters[rows]; //for each point, keeps it current closest cluster
@@ -183,8 +185,11 @@ double** K_means(int K, char* input_filename, int max_iter){
         //calculate new centroids
         old_centroids = copy(centroids,K, cols); //for changes checking
         cluster_sum = buildMatrix(K, cols); //zero matrix
+        double cluster_change[K];
         int cluster_counter[K];
         memset(cluster_counter, 0, sizeof(cluster_counter)); //zero array
+        memset(cluster_change, 0, sizeof(cluster_change)); //zero array
+
 
         //sum and count
         for(int r=0; r<rows; r++){
@@ -194,14 +199,29 @@ double** K_means(int K, char* input_filename, int max_iter){
         }
 
         //update centroids
+        counter = 0;
+
         for(int k=0; k<K; k++){
             for(int c=0; c<cols; c++){
                 centroids[k][c] = cluster_sum[k][c] / cluster_counter[k];
             }
+            //check change vector
+            double* tmp_vec = sub_vectors(centroids[k],old_centroids[k], cols);
+            cluster_change[k] = sqrt(squared_dot_product(tmp_vec, tmp_vec, cols));
+            if(cluster_change[k]<epsilon){
+                counter += 1;
+            }
+        }
+        if(counter == K){
+            printf("\n");
+            printf("iter:");
+            printf("%d", iter);
+            printf("\n");
+            break;
         }
     }
-//    free(data);
-//    free(old_centroids);
+    free(data);
+    free(old_centroids);
     return centroids;
 }
 
