@@ -61,7 +61,7 @@ int countCols(char* filePath){
 void printMatrix(double** mat, int rows, int cols){
     for (int i=0; i<rows;i++){
         for (int j=0;j<cols;j++){
-            printf(" %f",mat[i][j]);
+            printf(" %.4f",mat[i][j]);
         }
         printf("\n");
     }
@@ -78,10 +78,11 @@ double** buildMatrix(int rows, int cols){
 
 double** createMatrix(int rows, int cols, char* filePath){
     double** matrix = buildMatrix(rows,cols);
-    int lineSize = cols * sizeof(double);
+    int lineSize = cols*16;
     FILE *fp =  fopen(filePath,"r");
     char *token; // String pointer
     int i=0,j=0;
+    double tmp;
 
     if (fp==NULL){
         printf("Empty File");
@@ -99,6 +100,7 @@ double** createMatrix(int rows, int cols, char* filePath){
         j=0;
     }
     fclose(fp);
+
     return matrix;
 
 }
@@ -106,31 +108,11 @@ double** createMatrix(int rows, int cols, char* filePath){
 
 int main() {
 
-    char* PATH =  "C:\\Users\\Omri\\Desktop\\CS_Omri\\Second_Year\\SW_Project\\EX_1\\K_Means_C\\KMeans_C_project\\test.txt";
+    char* PATH =  "C:\\Users\\Omri\\Desktop\\CS_Omri\\Second_Year\\SW_Project\\EX_1\\K_Means_C\\KMeans_C_project\\input_1.txt";
     int rows = countLines(PATH);
     int cols = countCols(PATH);
     double ** matrix = createMatrix(rows,cols,PATH);
     printMatrix(matrix,rows,cols);
-
-
-
-//double **a = calloc(3, sizeof(int*));
-//    for (int i=0;i<3;i++){
-//        a[i] = calloc(4, sizeof(double));
-//    }
-//
-//    printMatrix(a,3,4);
-//
-//    for(int i=0; i<3; i++){
-//        for(int j=0; j<4; j++){
-//            a[i][j] = 99.9;
-//        }
-//    }
-//
-//    printf("\n");
-//    printMatrix(a,3,4);
-
-
 
 
 }
