@@ -236,11 +236,8 @@ double** K_means(int K, int max_iter, char* input_filename, char* output_filenam
                 counter += 1;
             }
         }
+        // check if all coordinates changes are less than epsilon
         if(counter == K){
-            printf("\n");
-            printf("iter:");
-            printf("%d", iter);
-            printf("\n");
             break;
         }
     }
@@ -250,17 +247,65 @@ double** K_means(int K, int max_iter, char* input_filename, char* output_filenam
     return centroids;
 }
 
+int validate_input_args(int argc, char* K_str, char* max_iter_str){
+    /*
+     * Tests:
+     * 1. argc ==5
+     * 2. K and max_iter are Integers
+     * 3. K and max_iter > 0
+     * Assumptions:
+     * 1. K >= data points
+     */
 
+    double tmp_k = atof(K_str);
+    int K = atoi(K_str);
+    double tmp_max_iter = atof(max_iter_str);
+    int max_iter = atoi(max_iter_str);
 
-int main() {
+    if (argc!=5 || K!=tmp_k || max_iter!=tmp_max_iter || K<=0 || max_iter<=0){
+        return 1;
+    }
+    return 0;
+}
 
-    char* input_path =  "C:\\Users\\Omri\\Desktop\\CS_Omri\\Second_Year\\SW_Project\\EX_1\\K_Means_C\\KMeans_C_project\\input_3.txt";
-    char* output_path = "C:\\Users\\Omri\\Desktop\\CS_Omri\\Second_Year\\SW_Project\\EX_1\\K_Means_C\\KMeans_C_project\\output_test_3.txt";
+void kmean_test(){
+    char* input_path =  "C:\\Users\\Omri\\Desktop\\CS_Omri\\Second_Year\\SW_Project\\EX_1\\K_Means_C\\KMeans_C_project\\files\\input_3.txt";
+    char* output_path = "C:\\Users\\Omri\\Desktop\\CS_Omri\\Second_Year\\SW_Project\\EX_1\\K_Means_C\\KMeans_C_project\\files\\output_test_3.txt";
     int rows = countLines(input_path);
     int cols = countCols(input_path);
     int K = 15;
     double** mat = K_means(K, 200, input_path, output_path);
     printMatrix(mat, K, cols);
+
+}
+
+
+int main(int argc, char * argv[]) {
+//    kmean_test();
+
+    char* K_str = argv[1];
+    char* max_iter_str = argv[2];
+    char* input_name = argv[3];
+    char* output_name = argv[4];
+
+    if (validate_input_args(argc,K_str,max_iter_str)==1){
+        printf("Invalid Input!");
+        return 1;
+    }
+    //valid data
+    int K = atoi(K_str);
+    int max_iter = atoi(max_iter_str);
+
+
+//    printf("%d", argc);
+//    printf("\n");
+//    printf("\n");
+//    printf(max_iter);
+//    printf("\n");
+//    printf(input_name);
+//    printf("\n");
+//    printf(output_name);
+
 
 
 
