@@ -147,15 +147,22 @@ double** copy(double** data, int K, int cols){
 }
 
 double** K_means(int K, char* input_filename, int max_iter){
+    /*
+     * recieves input file, K = number of clusters, max_iter = max number of iterations
+     * connects every point to the closest cluster
+     * returns vector of centroids
+     */
     int rows = countLines(input_filename);
     int cols = countCols(input_filename);
     double ** data = createMatrix(rows,cols,input_filename);
-    double** centroids = copy(data, K, cols);
+    double** centroids = copy(data, K, cols); //K first data points
     int idx, arg_min;
     double min_dist;
+    double** cluster_sum;
+    double** old_centroids;
     //place to treat input validity
 
-    int points_clusters[rows];
+    int points_clusters[rows]; //for each point, keeps it current closest cluster
 
     for(int iter=0; iter<max_iter; iter++){
         //iterate through points and assign to the closest cluster
@@ -174,11 +181,12 @@ double** K_means(int K, char* input_filename, int max_iter){
             points_clusters[point] = arg_min;
         }
         //calculate new centroids
-        double** old_centroids = copy(centroids,K, cols);
-        double** cluster_sum = buildMatrix(K, cols); //zero matrix
+        old_centroids = copy(centroids,K, cols); //for changes checking
+        cluster_sum = buildMatrix(K, cols); //zero matrix
         int cluster_counter[K];
         memset(cluster_counter, 0, sizeof(cluster_counter)); //zero array
 
+        //sum and count
         for(int r=0; r<rows; r++){
              idx = points_clusters[r];
              cluster_counter[idx] += 1;
@@ -192,25 +200,21 @@ double** K_means(int K, char* input_filename, int max_iter){
             }
         }
     }
-    free(data);
+//    free(data);
+//    free(old_centroids);
     return centroids;
 }
 
 
 int main() {
 
-    char* PATH =  "C:\\Users\\Omri\\Desktop\\CS_Omri\\Second_Year\\SW_Project\\EX_1\\K_Means_C\\KMeans_C_project\\input_3.txt";
+    char* PATH =  "C:\\Users\\Omri\\Desktop\\CS_Omri\\Second_Year\\SW_Project\\EX_1\\K_Means_C\\KMeans_C_project\\input_1.txt";
     int rows = countLines(PATH);
     int cols = countCols(PATH);
-//    double ** matrix = createMatrix(rows,cols,PATH);
-//    printMatrix(matrix,rows,cols);
-//
-//    double** new_mat = copy(matrix, 3, 3);
-//    printMatrix(new_mat, 3,3);
-//
-//    free(matrix);
-    double** mat = K_means(15, PATH, 200);
-    printMatrix(mat, rows,cols);
+    int K = 3;
+
+    double** mat = K_means(K, PATH, 200);
+    printMatrix(mat, K, cols);
 
 }
 
