@@ -15,8 +15,8 @@ int countLines(char* filePath){
     int counter=0;
 
     if (fp==NULL){
-        printf("Invalid Input");
-        return 0;
+        printf("Invalid Input!");
+        return 1;
     }
     for (c= getc(fp); c!=EOF; c= getc(fp)){
         if (c=='\n'){
@@ -40,8 +40,8 @@ int countCols(char* filePath){
     int counter=0;
 
     if (fp==NULL){
-        printf("Invalid Input");
-        return 0;
+        printf("Invalid Input!");
+        return 1;
     }
 
     for (c= getc(fp); c!='\n'; c= getc(fp)){
@@ -92,7 +92,7 @@ double** createMatrix(int rows, int cols, char* filePath){
     double tmp;
 
     if (fp==NULL){
-        printf("Invalid Input");
+        printf("Invalid Input!");
     }
 
     char line[lineSize];
@@ -147,7 +147,31 @@ double** copy(double** data, int K, int cols){
     return new_mat;
 }
 
-double** K_means(int K, char* input_filename, int max_iter){
+FILE* write_output(char* output_filename, int rows, int cols,double** centroids){
+
+    char tmp_str[100];
+    FILE* fp;
+    fp = fopen(output_filename, "w");
+    if (fp==NULL){
+        printf("An Error Has Occurred");
+        return 1;
+    }
+    for (int r=0;r<rows;r++){
+        int c = 0;
+        for (;c<cols-1;c++){
+            sprintf(tmp_str,"%.4f",centroids[r][c]) ;
+            fputs(tmp_str,fp);
+            fputs(",",fp);
+        }
+        sprintf(tmp_str,"%.4f",centroids[r][c]) ;
+        fputs(tmp_str,fp);
+        fputs("\n", fp);
+    }
+    fclose(fp);
+    return fp;
+}
+
+double** K_means(int K, int max_iter, char* input_filename, char* output_filename){
     /*
      * recieves input file, K = number of clusters, max_iter = max number of iterations
      * connects every point to the closest cluster
@@ -222,19 +246,24 @@ double** K_means(int K, char* input_filename, int max_iter){
     }
     free(data);
     free(old_centroids);
+    write_output(output_filename, K, cols, centroids);
     return centroids;
 }
 
 
+
 int main() {
 
-    char* PATH =  "C:\\Users\\Omri\\Desktop\\CS_Omri\\Second_Year\\SW_Project\\EX_1\\K_Means_C\\KMeans_C_project\\input_1.txt";
-    int rows = countLines(PATH);
-    int cols = countCols(PATH);
-    int K = 3;
-
-    double** mat = K_means(K, PATH, 200);
+    char* input_path =  "C:\\Users\\Omri\\Desktop\\CS_Omri\\Second_Year\\SW_Project\\EX_1\\K_Means_C\\KMeans_C_project\\input_3.txt";
+    char* output_path = "C:\\Users\\Omri\\Desktop\\CS_Omri\\Second_Year\\SW_Project\\EX_1\\K_Means_C\\KMeans_C_project\\output_test_3.txt";
+    int rows = countLines(input_path);
+    int cols = countCols(input_path);
+    int K = 15;
+    double** mat = K_means(K, 200, input_path, output_path);
     printMatrix(mat, K, cols);
+
+
+
 
 }
 
