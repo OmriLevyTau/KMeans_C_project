@@ -142,6 +142,7 @@ double** createMatrix(int rows, int cols, char* filePath){
     if(fclose(fp)!=0){
         longjmp(savebuf,1);
     }
+    free(line);
 
     return matrix;
 }
@@ -313,8 +314,15 @@ double** K_means(int K, int max_iter, char* input_filename, char* output_filenam
             break;
         }
     }
-    free(data);
+
+    free(cluster_sum);
     free(old_centroids);
+    free(points_clusters);
+    free(cluster_change);
+    free(cluster_counter);
+    free(tmp_vec);
+    free(data);
+
     write_output(output_filename, K, cols, centroids);
     return centroids;
 }
