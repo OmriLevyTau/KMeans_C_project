@@ -2,8 +2,10 @@
 #include <string.h>
 # include <stdlib.h>
 # include <math.h>
+# include <setjmp.h>
 #include <unistd.h>
 # define epsilon 0.001
+jmp_buf savebuf;
 
 int countLines(char* filePath){
     /*
@@ -16,8 +18,7 @@ int countLines(char* filePath){
     int counter=0;
 
     if (fp==NULL){
-        printf("Invalid Input!");
-        return 1;
+        longjmp(savebuf,1);
     }
     for (c= getc(fp); c!=EOF; c= getc(fp)){
         if (c=='\n'){
@@ -41,8 +42,7 @@ int countCols(char* filePath){
     int counter=0;
 
     if (fp==NULL){
-        printf("Invalid Input!");
-        return 1;
+        longjmp(savebuf,1);
     }
 
     for (c= getc(fp); c!='\n'; c= getc(fp)){
@@ -75,8 +75,14 @@ double** buildMatrix(int rows, int cols){
      * Creates empty matrix of size rows x cols
      */
     double **a = calloc(rows, sizeof(int*));
+    if (a==NULL){
+        longjmp(savebuf,1);
+    }
     for (int i=0;i<rows;i++){
         a[i] = calloc(cols, sizeof(double));
+        if (a[i]==NULL){
+            longjmp(savebuf,1);
+        }
     }
     return a;
 }
@@ -93,7 +99,7 @@ double** createMatrix(int rows, int cols, char* filePath){
     double tmp;
 
     if (fp==NULL){
-        printf("Invalid Input!");
+        longjmp(savebuf,1);
     }
 
     char line[lineSize];
@@ -117,6 +123,9 @@ double** createMatrix(int rows, int cols, char* filePath){
 
 double* sub_vectors(const double *A, const double *B, int n){
     double* res = (double*)malloc(n*sizeof(double));
+    if (res==NULL){
+        longjmp(savebuf,1);
+    }
     for(int i=0; i<n; i++){
         res[i] = A[i] - B[i];
     }
@@ -125,6 +134,9 @@ double* sub_vectors(const double *A, const double *B, int n){
 
 double* add_vectors(const double *A, const double *B, int n){
     double* res = (double*)malloc(n*sizeof(double));
+    if (res==NULL){
+        longjmp(savebuf,1);
+    }
     for(int i=0; i<n; i++){
         res[i] = A[i] + B[i];
     }
@@ -154,13 +166,12 @@ FILE* write_output(char* output_filename, int rows, int cols,double** centroids)
     FILE* fp;
     fp = fopen(output_filename, "w");
     if (fp==NULL){
-        printf("An Error Has Occurred");
-        return 1;
+        longjmp(savebuf,1);
     }
     for (int r=0;r<rows;r++){
         int c = 0;
         for (;c<cols-1;c++){
-            sprintf(tmp_str,"%.4f",centroids[r][c]) ;
+            sprintf(tmp_str,"%.4f",centroids[r][c]) ; // saves centroids[r][c] in tmp_str
             fputs(tmp_str,fp);
             fputs(",",fp);
         }
@@ -228,6 +239,9 @@ double** K_means(int K, int max_iter, char* input_filename, char* output_filenam
 
         for(int k=0; k<K; k++){
             for(int c=0; c<cols; c++){
+                if (cluster_counter[k]==0){
+                    longjmp(savebuf,1);
+                }
                 centroids[k][c] = cluster_sum[k][c] / cluster_counter[k];
             }
             //check change vector
@@ -248,7 +262,7 @@ double** K_means(int K, int max_iter, char* input_filename, char* output_filenam
     return centroids;
 }
 
-int validate_input_args(int argc, char* K_str, char* max_iter_str){
+int validate_input_args(int argc, char* argv[]){
     /*
      * Tests:
      * 1. argc ==5
@@ -257,59 +271,92 @@ int validate_input_args(int argc, char* K_str, char* max_iter_str){
      * Assumptions:
      * 1. K >= data points
      */
+    if (argc!=5 && argc!=4){
+        return 1;
+    }
+    char* K_str;
+    char* max_iter_str;
+    char* input_name;
+    char* output_name;
+
+    if (argc==5){
+        K_str = argv[1];
+        max_iter_str = argv[2];
+        input_name = argv[3];
+        output_name = argv[4];
+    } else {
+        K_str = argv[1];
+        max_iter_str = "200";
+        input_name = argv[2];
+        output_name = argv[3];
+    }
 
     double tmp_k = atof(K_str);
     int K = atoi(K_str);
     double tmp_max_iter = atof(max_iter_str);
     int max_iter = atoi(max_iter_str);
 
-    if (argc!=5 || K!=tmp_k || max_iter!=tmp_max_iter || K<=0 || max_iter<=0){
+    if (K!=tmp_k || max_iter!=tmp_max_iter || K<=1 || max_iter<=0){
         return 1;
     }
     return 0;
 }
 
-void kmean_test(){
-    char* input_path =  "C:\\Users\\Omri\\Desktop\\CS_Omri\\Second_Year\\SW_Project\\EX_1\\K_Means_C\\KMeans_C_project\\files\\input_3.txt";
-    char* output_path = "C:\\Users\\Omri\\Desktop\\CS_Omri\\Second_Year\\SW_Project\\EX_1\\K_Means_C\\KMeans_C_project\\files\\output_test_3.txt";
-    int rows = countLines(input_path);
+void kmean_test(int K, int max_iter, char* input_path, char* output_path){
     int cols = countCols(input_path);
-    int K = 15;
     double** mat = K_means(K, 200, input_path, output_path);
     printMatrix(mat, K, cols);
-
 }
 
 
 int main(int argc, char * argv[]) {
-    kmean_test();
 
-    char* K_str = argv[1];
-    char* max_iter_str = argv[2];
-    char* input_name = argv[3];
-    char* output_name = argv[4];
+    char* K_str;
+    char* max_iter_str;
+    char* input_name;
+    char* output_name;
 
-    if (validate_input_args(argc,K_str,max_iter_str)==1){
+    if (validate_input_args(argc,argv)==1){
         printf("Invalid Input!");
         return 1;
     }
-    //data is valid
+    if (argc==4){
+        K_str = argv[1];
+        max_iter_str = "200";
+        input_name = argv[2];
+        output_name = argv[3];
+    } else {
+        K_str = argv[1];
+        max_iter_str = argv[2];
+        input_name = argv[3];
+        output_name = argv[4];
+    }
     int K = atoi(K_str);
     int max_iter = atoi(max_iter_str);
 
-    char cwd[PATH_MAX];
-    if (getcwd(cwd, sizeof(cwd)) != NULL) {
-        printf("Current working dir: %s\n", cwd);
+    char* input_path =  "C:\\Users\\Omri\\Desktop\\CS_Omri\\Second_Year\\SW_Project\\EX_1\\K_Means_C\\KMeans_C_project\\files\\input_2.txt";
+    char* output_path = "C:\\Users\\Omri\\Desktop\\CS_Omri\\Second_Year\\SW_Project\\EX_1\\K_Means_C\\KMeans_C_project\\files\\output_test_2.txt";
+
+
+    if (setjmp(savebuf)==0){
+        // CMD args
+        kmean_test(K, max_iter,input_name,output_name);
+        // Good args
+//        kmean_test(K, max_iter,input_path,output_path);
+        return 0;
     } else {
-        perror("getcwd() error");
+        printf("An Error Has Occurred");
+        return 1;
     }
 
 
 
-
-
-
+//    char cwd[PATH_MAX];
+//    if (getcwd(cwd, sizeof(cwd)) != NULL) {
+//        printf("Current working dir: %s\n", cwd);
+//    } else {
+//        perror("getcwd() error");
+//    }
 
 
 }
-
