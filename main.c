@@ -7,6 +7,21 @@
 # define epsilon 0.001
 jmp_buf savebuf;
 
+int countLines(char* filePath);
+int countCols(char* filePath);
+void printMatrix(double** mat, int rows, int cols);
+double** buildMatrix(int rows, int cols);
+double** createMatrix(int rows, int cols, char* filePath);
+double* sub_vectors(const double *A, const double *B, int n);
+double* add_vectors(const double *A, const double *B, int n);
+double squared_dot_product(const double *A, const double *B, int n);
+FILE* write_output(char* output_filename, int rows, int cols,double** centroids);
+double** K_means(int K, int max_iter, char* input_filename, char* output_filename);
+int validate_input_args(int argc, char* argv[]);
+void kmean_test(int K, int max_iter, char* input_path, char* output_path);
+
+
+
 int countLines(char* filePath){
     /*
      * input: file Name
@@ -61,8 +76,9 @@ int countCols(char* filePath){
 }
 
 void printMatrix(double** mat, int rows, int cols){
-    for (int i=0; i<rows;i++){
-        for (int j=0;j<cols;j++){
+    int i,j;
+    for (i=0; i<rows;i++){
+        for (j=0;j<cols;j++){
             printf("  %.4f",mat[i][j]);
         }
         printf("\n");
@@ -74,11 +90,12 @@ double** buildMatrix(int rows, int cols){
     /*
      * Creates empty matrix of size rows x cols
      */
+    int i;
     double **a = calloc(rows, sizeof(int*));
     if (a==NULL){
         longjmp(savebuf,1);
     }
-    for (int i=0;i<rows;i++){
+    for (i=0;i<rows;i++){
         a[i] = calloc(cols, sizeof(double));
         if (a[i]==NULL){
             longjmp(savebuf,1);
@@ -92,17 +109,17 @@ double** createMatrix(int rows, int cols, char* filePath){
      * Creates empty matrix and fills it with read values from file
      */
     double** matrix = buildMatrix(rows,cols);
-    int lineSize = cols*16;
+    int lineSize = cols*18; // 17 + 1
     FILE *fp =  fopen(filePath,"r");
     char *token; // String pointer
     int i=0,j=0;
     double tmp;
+    char line[lineSize];
 
     if (fp==NULL){
         longjmp(savebuf,1);
     }
 
-    char line[lineSize];
     // Reads each line as a string
     while (fgets(line,lineSize,fp)!=NULL){
         token = strtok(line,","); // token is a string between 2 commas
@@ -122,38 +139,42 @@ double** createMatrix(int rows, int cols, char* filePath){
 }
 
 double* sub_vectors(const double *A, const double *B, int n){
+    int i;
     double* res = (double*)malloc(n*sizeof(double));
     if (res==NULL){
         longjmp(savebuf,1);
     }
-    for(int i=0; i<n; i++){
+    for(i=0; i<n; i++){
         res[i] = A[i] - B[i];
     }
     return res;
 }
 
 double* add_vectors(const double *A, const double *B, int n){
+    int i;
     double* res = (double*)malloc(n*sizeof(double));
     if (res==NULL){
         longjmp(savebuf,1);
     }
-    for(int i=0; i<n; i++){
+    for(i=0; i<n; i++){
         res[i] = A[i] + B[i];
     }
     return res;
 }
 double squared_dot_product(const double *A, const double *B, int n){
+    int i;
     double res = 0;
-    for(int i=0; i<n; i++){
+    for(i=0; i<n; i++){
         res = res + (A[i] * B[i]);
     }
     return res;
 }
 
 double** copy(double** data, int K, int cols){
+    int i,j;
     double** new_mat = buildMatrix(K, cols);
-    for(int i=0; i<K; i++){
-        for(int j=0; j<cols; j++){
+    for(i=0; i<K; i++){
+        for(j=0; j<cols; j++){
             new_mat[i][j] = data[i][j];
         }
     }
@@ -165,11 +186,13 @@ FILE* write_output(char* output_filename, int rows, int cols,double** centroids)
     char tmp_str[100];
     FILE* fp;
     fp = fopen(output_filename, "w");
+    int r,c;
+
     if (fp==NULL){
         longjmp(savebuf,1);
     }
-    for (int r=0;r<rows;r++){
-        int c = 0;
+    for (r=0;r<rows;r++){
+        c = 0;
         for (;c<cols-1;c++){
             sprintf(tmp_str,"%.4f",centroids[r][c]) ; // saves centroids[r][c] in tmp_str
             fputs(tmp_str,fp);
@@ -193,7 +216,7 @@ double** K_means(int K, int max_iter, char* input_filename, char* output_filenam
     int cols = countCols(input_filename);
     double ** data = createMatrix(rows,cols,input_filename);
     double** centroids = copy(data, K, cols); //K first data points
-    int idx, arg_min, counter;
+    int idx, arg_min, counter,iter,point,cluster_ind, r, k, c;
     double min_dist;
     double** cluster_sum;
     double** old_centroids;
@@ -202,12 +225,12 @@ double** K_means(int K, int max_iter, char* input_filename, char* output_filenam
 
     int points_clusters[rows]; //for each point, keeps it current closest cluster
 
-    for(int iter=0; iter<max_iter; iter++){
+    for(iter=0; iter<max_iter; iter++){
         //iterate through points and assign to the closest cluster
-        for (int point=0; point<rows; point++){
+        for (point=0; point<rows; point++){
             min_dist = INT_MAX;
             arg_min = -1;
-            for(int cluster_ind=0; cluster_ind<K; cluster_ind++){
+            for(cluster_ind=0; cluster_ind<K; cluster_ind++){
                 double* cluster = centroids[cluster_ind];
                 double* tmp_arr = sub_vectors(cluster,data[point], cols);
                 double dist_point_cluster = squared_dot_product(tmp_arr,tmp_arr,cols);
@@ -228,7 +251,7 @@ double** K_means(int K, int max_iter, char* input_filename, char* output_filenam
 
 
         //sum and count
-        for(int r=0; r<rows; r++){
+        for(r=0; r<rows; r++){
              idx = points_clusters[r];
              cluster_counter[idx] += 1;
              cluster_sum[idx] = add_vectors(cluster_sum[idx], data[r], cols);
@@ -237,8 +260,8 @@ double** K_means(int K, int max_iter, char* input_filename, char* output_filenam
         //update centroids
         counter = 0;
 
-        for(int k=0; k<K; k++){
-            for(int c=0; c<cols; c++){
+        for(k=0; k<K; k++){
+            for(c=0; c<cols; c++){
                 if (cluster_counter[k]==0){
                     longjmp(savebuf,1);
                 }
@@ -278,6 +301,8 @@ int validate_input_args(int argc, char* argv[]){
     char* max_iter_str;
     char* input_name;
     char* output_name;
+    double tmp_k, tmp_max_iter;
+    int K, max_iter;
 
     if (argc==5){
         K_str = argv[1];
@@ -291,10 +316,10 @@ int validate_input_args(int argc, char* argv[]){
         output_name = argv[3];
     }
 
-    double tmp_k = atof(K_str);
-    int K = atoi(K_str);
-    double tmp_max_iter = atof(max_iter_str);
-    int max_iter = atoi(max_iter_str);
+    tmp_k = atof(K_str);
+    K = atoi(K_str);
+    tmp_max_iter = atof(max_iter_str);
+    max_iter = atoi(max_iter_str);
 
     if (K!=tmp_k || max_iter!=tmp_max_iter || K<=1 || max_iter<=0){
         return 1;
@@ -340,23 +365,13 @@ int main(int argc, char * argv[]) {
 
     if (setjmp(savebuf)==0){
         // CMD args
-        kmean_test(K, max_iter,input_name,output_name);
+//        kmean_test(K, max_iter,input_name,output_name);
         // Good args
-//        kmean_test(K, max_iter,input_path,output_path);
+        kmean_test(K, max_iter,input_path,output_path);
         return 0;
     } else {
         printf("An Error Has Occurred");
         return 1;
     }
-
-
-
-//    char cwd[PATH_MAX];
-//    if (getcwd(cwd, sizeof(cwd)) != NULL) {
-//        printf("Current working dir: %s\n", cwd);
-//    } else {
-//        perror("getcwd() error");
-//    }
-
 
 }
