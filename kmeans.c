@@ -1,37 +1,32 @@
-#include <stdio.h>
-#include <string.h>
+# include <stdio.h>
+# include <string.h>
 # include <stdlib.h>
 # include <math.h>
 # include <setjmp.h>
-#include <limits.h>
+# include <limits.h>
 # define epsilon 0.001
 jmp_buf savebuf;
 
 int countLines(char* filePath);
 int countCols(char* filePath);
-void printMatrix(double** mat, int rows, int cols);
 double** buildMatrix(int rows, int cols);
 double** createMatrix(int rows, int cols, char* filePath);
 double* sub_vectors(const double *A, const double *B, int n);
 double* add_vectors(const double *A, const double *B, int n);
 double squared_dot_product(const double *A, const double *B, int n);
-FILE* write_output(char* output_filename, int rows, int cols,double** centroids);
 double** K_means(int K, int max_iter, char* input_filename, char* output_filename);
 int validate_input_args(int argc, char* argv[]);
-void kmean_test(int K, int max_iter, char* input_path, char* output_path);
-
-
+FILE* write_output(char* output_filename, int rows, int cols,double** centroids);
+/* void printMatrix(double** mat, int rows, int cols); */
 
 int countLines(char* filePath){
     /*
      * input: file Name
      * output: number of lines in file
      */
-
     char c;
     int counter=0;
     FILE *fp =  fopen(filePath,"r");
-
 
     if (fp==NULL){
         longjmp(savebuf,1);
@@ -41,9 +36,10 @@ int countLines(char* filePath){
             counter+=1;
         }
     }
-    fclose(fp);
+    if(fclose(fp)!=0){
+        longjmp(savebuf,1);
+    }
     return counter;
-
 }
 
 int countCols(char* filePath){
@@ -68,7 +64,9 @@ int countCols(char* filePath){
         }
     }
 
-    fclose(fp);
+    if(fclose(fp)!=0){
+        longjmp(savebuf,1);
+    }
 
     if (counter==0){
         return 0;
@@ -86,7 +84,6 @@ void printMatrix(double** mat, int rows, int cols){
         printf("\n");
     }
 }
-
 
 double** buildMatrix(int rows, int cols){
     /*
@@ -142,10 +139,11 @@ double** createMatrix(int rows, int cols, char* filePath){
         i++;
         j=0;
     }
-    fclose(fp);
+    if(fclose(fp)!=0){
+        longjmp(savebuf,1);
+    }
 
     return matrix;
-
 }
 
 double* sub_vectors(const double *A, const double *B, int n){
@@ -177,6 +175,7 @@ double* add_vectors(const double *A, const double *B, int n){
     }
     return res;
 }
+
 double squared_dot_product(const double *A, const double *B, int n){
     int i;
     double res;
@@ -219,7 +218,9 @@ FILE* write_output(char* output_filename, int rows, int cols,double** centroids)
         fputs(tmp_str,fp);
         fputs("\n", fp);
     }
-    fclose(fp);
+    if(fclose(fp)!=0){
+        longjmp(savebuf,1);
+    }
     return fp;
 }
 
@@ -250,11 +251,8 @@ double** K_means(int K, int max_iter, char* input_filename, char* output_filenam
         longjmp(savebuf,1);
     }
 
-
     data = createMatrix(rows,cols,input_filename);
     centroids = copy(data, K, cols); /* K first data points */
-
-    /* place to treat input validity */
 
     for(iter=0; iter<max_iter; iter++){
         /* iterate through points and assign to the closest cluster */
@@ -324,7 +322,7 @@ double** K_means(int K, int max_iter, char* input_filename, char* output_filenam
 int validate_input_args(int argc, char* argv[]){
     /*
      * Tests:
-     * 1. argc ==5
+     * 1. argc == 5
      * 2. K and max_iter are Integers
      * 3. K and max_iter > 0
      * Assumptions:
@@ -358,16 +356,7 @@ int validate_input_args(int argc, char* argv[]){
     return 0;
 }
 
-void kmean_test(int K, int max_iter, char* input_path, char* output_path){
-    /*int cols = countCols(input_path); */
-    K_means(K, max_iter, input_path, output_path);
-    /* printMatrix(mat, K, cols); */
-
-}
-
-
 int main(int argc, char * argv[]) {
-
     char* K_str;
     char* max_iter_str;
     char* input_name;
@@ -391,21 +380,17 @@ int main(int argc, char * argv[]) {
     }
     K = atoi(K_str);
     max_iter = atoi(max_iter_str);
+
     /*
     char* input_path =  "C:\\Users\\Omri\\Desktop\\CS_Omri\\Second_Year\\SW_Project\\EX_1\\K_Means_C\\KMeans_C_project\\files\\input_2.txt";
     char* output_path = "C:\\Users\\Omri\\Desktop\\CS_Omri\\Second_Year\\SW_Project\\EX_1\\K_Means_C\\KMeans_C_project\\files\\output_test_2.txt";
     */
 
-
     if (setjmp(savebuf)==0){
-        /* CMD args */
-        kmean_test(K, max_iter,input_name,output_name);
-        /* Good args */
-        /* kmean_test(K, max_iter,input_path,output_path); */
+        K_means(K, max_iter,input_name,output_name);
         return 0;
     } else {
         printf("An Error Has Occurred");
         return 1;
     }
-
 }
