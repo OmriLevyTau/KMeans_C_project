@@ -277,6 +277,7 @@ void K_means(int K, int max_iter, char* input_filename, char* output_filename){
     data = createMatrix(rows,cols,input_filename);
     centroids = copy(data, K, cols); /* K first data points */
 
+
     for(iter=0; iter<max_iter; iter++){
         /* iterate through points and assign to the closest cluster */
         for (point=0; point<rows; point++){
@@ -344,19 +345,21 @@ void K_means(int K, int max_iter, char* input_filename, char* output_filename){
 
     f1 = free_helper(centroids, K);
     f2 = free_helper(data,rows);
-    f3 = free_helper(old_centroids, K);
-    f4 = free_helper(cluster_sum, K);
-
+    if (max_iter>0){
+        f3 = free_helper(old_centroids, K);
+        f4 = free_helper(cluster_sum, K);
+        /* free arrays */
+        free(points_clusters);
+        free(cluster_change);
+        free(cluster_counter);
+        free(tmp_vec);
+    } else {
+        f3 = 0;
+        f4 = 0;
+    }
     if ((f1+f2+f3+f4)>0){
         longjmp(savebuf,1);
     }
-
-    /* free arrays */
-    free(points_clusters);
-    free(cluster_change);
-    free(cluster_counter);
-    free(tmp_vec);
-
 
 }
 
@@ -365,7 +368,7 @@ int validate_input_args(int argc, char* argv[]){
      * Tests:
      * 1. argc == 5
      * 2. K and max_iter are Integers
-     * 3. K and max_iter > 0
+     * 3. K > 0 and max_iter >= 0
      * Assumptions:
      * 1. K >= data points
      */
@@ -391,7 +394,7 @@ int validate_input_args(int argc, char* argv[]){
     tmp_max_iter = atof(max_iter_str);
     max_iter = atoi(max_iter_str);
 
-    if (K!=tmp_k || max_iter!=tmp_max_iter || K<=1 || max_iter<=0){
+    if (K!=tmp_k || max_iter!=tmp_max_iter || K<=1 || max_iter<0){
         return 1;
     }
     return 0;
@@ -425,14 +428,14 @@ int main(int argc, char * argv[]) {
     K = atoi(K_str);
     max_iter = atoi(max_iter_str);
 
-    /*
+
     char* input_path =  "C:\\Users\\Omri\\Desktop\\CS_Omri\\Second_Year\\SW_Project\\EX_1\\K_Means_C\\KMeans_C_project\\files\\input_3.txt";
-    char* output_path = "C:\\Users\\Omri\\Desktop\\CS_Omri\\Second_Year\\SW_Project\\EX_1\\K_Means_C\\KMeans_C_project\\files\\output_test_3.txt";
-    */
+    char* output_path = "C:\\Users\\Omri\\Desktop\\CS_Omri\\Second_Year\\SW_Project\\EX_1\\K_Means_C\\KMeans_C_project\\files\\output_test_maxiter_3.txt";
+
 
 
     if (setjmp(savebuf)==0){
-        K_means(K, max_iter,input_name,output_name);
+        K_means(K, max_iter,input_path,output_path);
         return 0;
     } else {
         printf("An Error Has Occurred");
