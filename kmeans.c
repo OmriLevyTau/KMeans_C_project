@@ -14,10 +14,11 @@ double** createMatrix(int rows, int cols, char* filePath);
 double* sub_vectors(const double *A, const double *B, int n);
 double* add_vectors(const double *A, const double *B, int n);
 double squared_dot_product(const double *A, const double *B, int n);
-double** K_means(int K, int max_iter, char* input_filename, char* output_filename);
+void K_means(int K, int max_iter, char* input_filename, char* output_filename);
 int validate_input_args(int argc, char* argv[]);
 FILE* write_output(char* output_filename, int rows, int cols,double** centroids);
-/* void printMatrix(double** mat, int rows, int cols); */
+void print_vector(double* pointer, int cols);
+void printMatrix(double** mat, int rows, int cols);
 
 int countLines(char* filePath){
     /*
@@ -82,6 +83,13 @@ void printMatrix(double** mat, int rows, int cols){
             printf("  %.4f",mat[i][j]);
         }
         printf("\n");
+    }
+}
+
+void print_vector(double* pointer, int cols){
+    int i;
+    for (i=0; i<cols;i++){
+        printf("  %.4f",pointer[i]);
     }
 }
 
@@ -199,6 +207,20 @@ double** copy(double** data, int K, int cols){
     return new_mat;
 }
 
+int free_helper(double** pointer, int rows){
+    int i;
+    for (i = 0; i<rows; i++){
+        if (pointer[i]!=NULL){
+            free(pointer[i]);
+        } else {
+            return 1;
+        }
+    }
+    free(pointer);
+    return 0;
+}
+
+
 FILE* write_output(char* output_filename, int rows, int cols,double** centroids){
     int r,c;
     char tmp_str[100];
@@ -225,7 +247,7 @@ FILE* write_output(char* output_filename, int rows, int cols,double** centroids)
     return fp;
 }
 
-double** K_means(int K, int max_iter, char* input_filename, char* output_filename){
+void K_means(int K, int max_iter, char* input_filename, char* output_filename){
     /*
      * recieves input file, K = number of clusters, max_iter = max number of iterations
      * connects every point to the closest cluster
@@ -233,7 +255,7 @@ double** K_means(int K, int max_iter, char* input_filename, char* output_filenam
      */
     double ** data;
     double** centroids;
-    int idx, arg_min, counter,iter,point,cluster_ind, r, k, c, rows, cols;
+    int idx, arg_min, counter,iter,point,cluster_ind, r, k, c, rows, cols, f1, f2, f3, f4;
     double min_dist, dist_point_cluster;
     double** cluster_sum;
     double** old_centroids;
@@ -315,16 +337,27 @@ double** K_means(int K, int max_iter, char* input_filename, char* output_filenam
         }
     }
 
-    free(cluster_sum);
-    free(old_centroids);
+
+    write_output(output_filename, K, cols, centroids);
+
+    /* free matrices */
+
+    f1 = free_helper(centroids, K);
+    f2 = free_helper(data,rows);
+    f3 = free_helper(old_centroids, K);
+    f4 = free_helper(cluster_sum, K);
+
+    if ((f1+f2+f3+f4)>0){
+        longjmp(savebuf,1);
+    }
+
+    /* free arrays */
     free(points_clusters);
     free(cluster_change);
     free(cluster_counter);
     free(tmp_vec);
-    free(data);
 
-    write_output(output_filename, K, cols, centroids);
-    return centroids;
+
 }
 
 int validate_input_args(int argc, char* argv[]){
@@ -364,7 +397,10 @@ int validate_input_args(int argc, char* argv[]){
     return 0;
 }
 
+
 int main(int argc, char * argv[]) {
+
+
     char* K_str;
     char* max_iter_str;
     char* input_name;
@@ -390,9 +426,10 @@ int main(int argc, char * argv[]) {
     max_iter = atoi(max_iter_str);
 
     /*
-    char* input_path =  "C:\\Users\\Omri\\Desktop\\CS_Omri\\Second_Year\\SW_Project\\EX_1\\K_Means_C\\KMeans_C_project\\files\\input_2.txt";
-    char* output_path = "C:\\Users\\Omri\\Desktop\\CS_Omri\\Second_Year\\SW_Project\\EX_1\\K_Means_C\\KMeans_C_project\\files\\output_test_2.txt";
+    char* input_path =  "C:\\Users\\Omri\\Desktop\\CS_Omri\\Second_Year\\SW_Project\\EX_1\\K_Means_C\\KMeans_C_project\\files\\input_3.txt";
+    char* output_path = "C:\\Users\\Omri\\Desktop\\CS_Omri\\Second_Year\\SW_Project\\EX_1\\K_Means_C\\KMeans_C_project\\files\\output_test_3.txt";
     */
+
 
     if (setjmp(savebuf)==0){
         K_means(K, max_iter,input_name,output_name);
@@ -401,4 +438,5 @@ int main(int argc, char * argv[]) {
         printf("An Error Has Occurred");
         return 1;
     }
+
 }
