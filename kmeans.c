@@ -17,8 +17,24 @@ double squared_dot_product(const double *A, const double *B, int n);
 void K_means(int K, int max_iter, char* input_filename, char* output_filename);
 int validate_input_args(int argc, char* argv[]);
 FILE* write_output(char* output_filename, int rows, int cols,double** centroids);
+int validateInputFile(char* filePath);
 void print_vector(double* pointer, int cols);
 void printMatrix(double** mat, int rows, int cols);
+
+int validateInputFile(char* filePath){
+    /*
+     * input: file Name
+     * output: number of lines in file
+     */
+
+    FILE *fp =  fopen(filePath,"r");
+    if (fp==NULL){
+        return 1;
+    }
+    fclose(fp);
+    return 0;
+}
+
 
 int countLines(char* filePath){
     /*
@@ -70,7 +86,7 @@ int countCols(char* filePath){
     }
 
     if (counter==0){
-        return 0;
+        return 1;
     } else{
         return ++counter;
     }
@@ -122,7 +138,7 @@ double** createMatrix(int rows, int cols, char* filePath){
     char* line;
     FILE *fp;
 
-    line = calloc(lineSize, sizeof(char ));
+    line = calloc(lineSize, sizeof(char));
     if(line == NULL){
         longjmp(savebuf,1);
     }
@@ -255,11 +271,12 @@ void K_means(int K, int max_iter, char* input_filename, char* output_filename){
      */
     double ** data;
     double** centroids;
-    int idx, arg_min, counter,iter,point,cluster_ind, r, k, c, rows, cols, f1, f2, f3, f4;
+    int idx, arg_min, counter,iter,point,cluster_ind, r, k, c, rows, cols, f1, f2;
     double min_dist, dist_point_cluster;
     double** cluster_sum;
     double** old_centroids;
     double* cluster;
+    double* tmp_pointer;
     double* tmp_arr;
     int* points_clusters;
     double* cluster_change;
@@ -291,12 +308,13 @@ void K_means(int K, int max_iter, char* input_filename, char* output_filename){
                     min_dist = dist_point_cluster;
                     arg_min = cluster_ind;
                 }
+                free(tmp_arr);
             }
             points_clusters[point] = arg_min;
         }
         /* calculate new centroids */
         old_centroids = copy(centroids,K, cols); /* for changes checking */
-        cluster_sum = buildMatrix(K, cols); /* zero matrix */
+        cluster_sum = buildMatrix(K, cols);
         cluster_change = calloc(K, sizeof(double));
         if(cluster_change==NULL){
             longjmp(savebuf,1);
@@ -313,7 +331,9 @@ void K_means(int K, int max_iter, char* input_filename, char* output_filename){
         for(r=0; r<rows; r++){
              idx = points_clusters[r];
              cluster_counter[idx] += 1;
+             tmp_pointer = cluster_sum[idx];
              cluster_sum[idx] = add_vectors(cluster_sum[idx], data[r], cols);
+             free(tmp_pointer);
         }
 
         /* update centroids */
@@ -331,13 +351,19 @@ void K_means(int K, int max_iter, char* input_filename, char* output_filename){
             if(cluster_change[k]<epsilon){
                 counter += 1;
             }
+            free(tmp_vec);
         }
+
+        free(cluster_change);
+        free(cluster_counter);
+        free_helper(old_centroids, K);
+        free_helper(cluster_sum, K);
+
         /* check if all coordinates changes are less than epsilon*/
         if(counter == K){
             break;
         }
     }
-
 
     write_output(output_filename, K, cols, centroids);
 
@@ -345,19 +371,8 @@ void K_means(int K, int max_iter, char* input_filename, char* output_filename){
 
     f1 = free_helper(centroids, K);
     f2 = free_helper(data,rows);
-    if (max_iter>0){
-        f3 = free_helper(old_centroids, K);
-        f4 = free_helper(cluster_sum, K);
-        /* free arrays */
-        free(points_clusters);
-        free(cluster_change);
-        free(cluster_counter);
-        free(tmp_vec);
-    } else {
-        f3 = 0;
-        f4 = 0;
-    }
-    if ((f1+f2+f3+f4)>0){
+    free(points_clusters);
+    if ((f1+f2)>0){
         longjmp(savebuf,1);
     }
 
@@ -376,6 +391,8 @@ int validate_input_args(int argc, char* argv[]){
     char* max_iter_str;
     double tmp_k, tmp_max_iter;
     int K, max_iter;
+    char* input_name;
+
 
     if (argc!=5 && argc!=4){
         return 1;
@@ -385,6 +402,10 @@ int validate_input_args(int argc, char* argv[]){
         K_str = argv[1];
         max_iter_str = argv[2];
     } else {
+        input_name = argv[2];
+        if (validateInputFile(input_name)==1){
+            return 1;
+        }
         K_str = argv[1];
         max_iter_str = "200";
     }
@@ -399,7 +420,6 @@ int validate_input_args(int argc, char* argv[]){
     }
     return 0;
 }
-
 
 int main(int argc, char * argv[]) {
 
@@ -429,13 +449,8 @@ int main(int argc, char * argv[]) {
     max_iter = atoi(max_iter_str);
 
 
-    char* input_path =  "C:\\Users\\Omri\\Desktop\\CS_Omri\\Second_Year\\SW_Project\\EX_1\\K_Means_C\\KMeans_C_project\\files\\input_3.txt";
-    char* output_path = "C:\\Users\\Omri\\Desktop\\CS_Omri\\Second_Year\\SW_Project\\EX_1\\K_Means_C\\KMeans_C_project\\files\\output_test_maxiter_3.txt";
-
-
-
     if (setjmp(savebuf)==0){
-        K_means(K, max_iter,input_path,output_path);
+        K_means(K, max_iter,input_name,output_name);
         return 0;
     } else {
         printf("An Error Has Occurred");
